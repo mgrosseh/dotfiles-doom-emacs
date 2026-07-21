@@ -117,7 +117,6 @@
 (map! :n :desc "Toggle electric pair mode" :leader "t p" #'electric-pair-mode)
 (map! :n :desc "Toggle evil-visual-mark-mode (display marks where they are set)" :leader "t `" #'evil-visual-mark-mode)
 (map! :desc "Toggle treemacs" :leader "t t" #'treemacs)
-(global-undo-tree-mode 1)
 (map! :desc "Toggle undo-tree-visualization" :leader "t u" #'undo-tree-visualize)
 
 ;; == []Global ==
@@ -180,6 +179,10 @@
 (with-eval-after-load 'evil-traces
   (evil-traces-use-diff-faces) ;; make it look better?
   (evil-traces-mode))
+
+(with-eval-after-load 'undo-tree
+  (setq undo-tree-auto-save-history nil) ; don't save history to file
+  (global-undo-tree-mode 1))
 
 
 ;; kinda sad C-a / C-x don't work but can use g- / g= instead and C-x seems too important / much of a hassle to move
