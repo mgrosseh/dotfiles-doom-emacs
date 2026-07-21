@@ -167,9 +167,9 @@
 
 (setq confirm-kill-emacs nil) ;; disable prompt when quitting
 
+;; TODO: I want to implement C-' to pass remaining key sequence into the normal mode keymap of evil mode to execute a single evil mode keyinput
+(keymap-global-set "C-' p" 'evil-paste-after)
 (setq standard-indent 2)
-;; (setq-default indent-tabs-mode nil) ;; I think this is set by default
-(dolist (key (mapcar 'kbd '("M-k" "M-j"))) (global-unset-key key))
 
 ;; display evil marks in buffer
 (with-eval-after-load 'evil-visual-mark-mode
@@ -184,6 +184,13 @@
   (setq undo-tree-auto-save-history nil) ; don't save history to file
   (global-undo-tree-mode 1))
 
+(with-eval-after-load 'rainbow-mode ; disable certain highlights, no need to make "red" be red
+  (setq rainbow-html-colors nil
+        rainbow-x-colors nil
+        rainbow-latex-colors nil
+        rainbow-ansi-colors 'auto
+        rainbow-r-colors nil))
+
 
 ;; kinda sad C-a / C-x don't work but can use g- / g= instead and C-x seems too important / much of a hassle to move
 ;;(doom/backward-to-bol-or-indent &optional POINT)
@@ -192,6 +199,10 @@
 ;;   (evil-define-key '(normal visual) 'global (kbd "C-x") 'evil-numbers/dec-at-pt)
 ;;   (evil-define-key '(normal visual) 'global (kbd "C-c C-+") 'evil-numbers/inc-at-pt-incremental)
 ;;   (evil-define-key '(normal visual) 'global (kbd "C-c C--") 'evil-numbers/dec-at-pt-incremental))
+
+(with-eval-after-load 'treemacs
+  (treemacs-project-follow-mode)) ;; regularly check current buffer, if different project (or out of project file), change root to match project
+
 
 ;; fix centaur tabs TODO: WIP
 (with-eval-after-load 'centaur-tabs
@@ -209,18 +220,15 @@
                         ((char-equal ?\  (aref (buffer-name b) 0)) nil)
                         ((buffer-live-p b) b)))
                 (buffer-list)))
-  (setq centaur-tabs-buffer-list-function #'+tabs-buffer-list)
+  (setq centaur-tabs-buffer-list-function #'+tabs-buffer-list) ;; restore default behavior as in source of centaur tabs
   (defun my/centaur-tabs-buffer-groups ()
       (list
        (cond
+        ((string-equal "*doom*" (buffer-name)) "doom")
         ((member (buffer-name) '("*scratch*" "*Messages*" "*dashboard*" "*eww*")) "Others")
-        ((string-equal "newsrc-dribble" (buffer-name)) "Others")
-        ((derived-mode-p 'gnus-mode) "All") ;; "Email")
-        ((eq major-mode 'message-mode) "All")
+        ((string-match "[*].*[*]" (buffer-name)) "Others")
         ((string-equal "*" (substring (buffer-name) 0 1)) "Others")
-        ((string-match "org.*sidebar" (buffer-name)) "Others")
-        ((string-match "<tree>" (buffer-name)) "Others")
-        ((string-match "^TAGS.*" (buffer-name)) "Others")
+        ((eq major-mode 'message-mode) "All")
         ((eq major-mode 'dired-mode) "dired")
         (t "All"))))
   (setq centaur-tabs-buffer-groups-function #'my/centaur-tabs-buffer-groups))
@@ -235,6 +243,7 @@
   (set-face-background 'minimap-active-region-background "#373844"))
 
 (setq which-key-idle-delay 0) ;; show which-key helper without delay
+
 
 ;; TODO: unsure if I need this with doom emacs:
 ;; (defun minibuffer-keyboard-quit ()
