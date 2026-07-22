@@ -1,9 +1,5 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
-;; Place your private configuration here! Remember, you do not need to run 'doom
-;; sync' after modifying this file!
-
-
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
 (setq user-full-name "Miranda Große-Heilmann"
@@ -23,19 +19,12 @@
 ;;
 (setq doom-font (font-spec :family "JuliaMono" :size 15 :weight 'semi-light)
       doom-variable-pitch-font (font-spec :family "JuliaMono" :size 16))
-;;
-;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
-;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
-;; refresh your font settings. If Emacs still can't find your font, it likely
-;; wasn't installed correctly. Font issues are rarely Doom issues!
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'doom-dracula)
 
-;; This determines the style of line numbers in effect. If set to `nil', line
-;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type t)
 
 ;; If you use `org' and don't want your org files in the default location below,
@@ -66,13 +55,7 @@
 ;; - `map!' for binding new keys
 ;;
 ;; To get information about any of these functions/macros, move the cursor over
-;; the highlighted symbol at press 'K' (non-evil users must press 'C-c c k').
-;; This will open documentation for it, including demos of how they are used.
-;; Alternatively, use `C-h o' to look up a symbol (functions, variables, faces,
-;; etc).
-;;
-;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
-;; they are implemented.
+;; the highlighted symbol at press 'K'.
 
 ;; CONSIDER:
 ;; evil-quickscope
@@ -161,15 +144,25 @@
       ("XXX+"     . "#ff5555")    ;; dracula red
       ("WARNING"  . "#ff5555")))) ;; dracula red
 
-(define-globalized-minor-mode global-rainbow-delimiters-mode rainbow-delimiters-mode
-  (lambda () (rainbow-delimiters-mode 1)))
-(global-rainbow-delimiters-mode 1)
-
 (setq confirm-kill-emacs nil) ;; disable prompt when quitting
 
 ;; TODO: I want to implement C-' to pass remaining key sequence into the normal mode keymap of evil mode to execute a single evil mode keyinput
-(keymap-global-set "C-' p" 'evil-paste-after)
+;; maybe look at: (evil-execute-in-emacs-state)
+;;(keymap-global-set "C-' p" 'evil-paste-after)
+;; this hack nearly gets me this behaviour
+(setq evil-want-minibuffer t)
+(add-hook 'minibuffer-setup-hook '(lambda () "Start minibuffer evil mode in emacs mode" (evil-emacs-state nil)))
+
 (setq standard-indent 2)
+
+
+;; ================================
+;; => Package config
+;; ================================
+
+(define-globalized-minor-mode global-rainbow-delimiters-mode rainbow-delimiters-mode
+  (lambda () (rainbow-delimiters-mode 1)))
+(global-rainbow-delimiters-mode 1)
 
 ;; display evil marks in buffer
 (with-eval-after-load 'evil-visual-mark-mode
@@ -181,8 +174,8 @@
   (evil-traces-mode))
 
 (with-eval-after-load 'undo-tree
-  (setq undo-tree-auto-save-history nil) ; don't save history to file
-  (global-undo-tree-mode 1))
+  (setq undo-tree-auto-save-history nil)) ; don't save history to file
+(global-undo-tree-mode 1)
 
 (with-eval-after-load 'rainbow-mode ; disable certain highlights, no need to make "red" be red
   (setq rainbow-html-colors nil
@@ -190,6 +183,9 @@
         rainbow-latex-colors nil
         rainbow-ansi-colors 'auto
         rainbow-r-colors nil))
+(define-globalized-minor-mode global-rainbow-mode rainbow-mode
+  (lambda () (rainbow-mode 1)))
+(global-rainbow-mode 1)
 
 
 ;; kinda sad C-a / C-x don't work but can use g- / g= instead and C-x seems too important / much of a hassle to move
@@ -204,10 +200,8 @@
   (treemacs-project-follow-mode)) ;; regularly check current buffer, if different project (or out of project file), change root to match project
 
 
-;; fix centaur tabs TODO: WIP
 (with-eval-after-load 'centaur-tabs
   (setq centaur-tabs-modified-marker "♡")
-;;  (setq centaur-tabs-close-button "")
 
   (set-face-foreground 'centaur-tabs-selected-modified "#bd93f9")
   (set-face-foreground 'centaur-tabs-unselected-modified "#bd93f9")
@@ -215,16 +209,18 @@
   (set-face-foreground 'centaur-tabs-close-selected "#ff5555")
   (defun +tabs-buffer-list ()
     (seq-filter (lambda (b)
-                  (cond ((eq (current-buffer) b) b)
-                        ((buffer-file-name b) b)
-                        ((char-equal ?\  (aref (buffer-name b) 0)) nil)
-                        ((buffer-live-p b) b)))
+                  (if (cond ((string-match "[*]Treemacs.*" (buffer-name b)) ;; added filter to filter out certain buffers
+                             (string-equal "*doom*" (buffer-name b))))
+                      nil
+                    (cond ((eq (current-buffer) b) b)
+                          ((buffer-file-name b) b)
+                          ((char-equal ?\  (aref (buffer-name b) 0)) nil)
+                          ((buffer-live-p b) b))))
                 (buffer-list)))
-  (setq centaur-tabs-buffer-list-function #'+tabs-buffer-list) ;; restore default behavior as in source of centaur tabs
+  (setq centaur-tabs-buffer-list-function #'+tabs-buffer-list)
   (defun my/centaur-tabs-buffer-groups ()
       (list
        (cond
-        ((string-equal "*doom*" (buffer-name)) "doom")
         ((member (buffer-name) '("*scratch*" "*Messages*" "*dashboard*" "*eww*")) "Others")
         ((string-match "[*].*[*]" (buffer-name)) "Others")
         ((string-equal "*" (substring (buffer-name) 0 1)) "Others")
@@ -233,17 +229,17 @@
         (t "All"))))
   (setq centaur-tabs-buffer-groups-function #'my/centaur-tabs-buffer-groups))
 
-(with-eval-after-load 'minimap
-  (setq minimap-minimum-width 25
-        minimap-width-fraction 0.125
-        minimap-window-location 'right
-        minimap-update-delay 0.4)
-  (set-face-background 'minimap-current-line-face "#bd93f9")
-  (set-face-foreground 'minimap-current-line-face "#282a36")
-  (set-face-background 'minimap-active-region-background "#373844"))
+(with-eval-after-load 'demap
+  (setq demap-minimap-window-width 16)
+  (set-face-background 'demap-current-line-face "#bd93f9")
+  (set-face-foreground 'demap-current-line-face "#282a36")
+  (set-face-background 'demap-visible-region-face "#373844"))
 
 (setq which-key-idle-delay 0) ;; show which-key helper without delay
 
+(with-eval-after-load 'corfu
+  (setq corfu-popupinfo-delay '(0.5 . 0.25)
+        corfu-popupinfo-max-height 15))
 
 ;; TODO: unsure if I need this with doom emacs:
 ;; (defun minibuffer-keyboard-quit ()
@@ -259,3 +255,30 @@
 ;; (define-key minibuffer-local-completion-map [escape] 'minibuffer-keyboard-quit)
 ;; (define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
 ;; (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
+
+(with-eval-after-load 'flyover
+  (setq flyover-show-at-eol t)
+  (setq flyover-display-mode 'show-only-on-same-line)
+  (add-to-list 'flyover-border-chars '(spaces . ("  " . "  ")))
+  (setq flyover-border-style 'spaces))
+
+;; ================================
+;; => Mode Hooks
+;; ================================
+
+(add-hook 'markdown-mode-hook
+          '(lambda () "My markdown mode configuration"
+             (display-fill-column-indicator)))
+
+
+
+;; ================================
+;; => Other
+;; ================================
+
+(defun display-virtual-caret ()
+  "Display a virtual caret at designated position"
+  (interactive)
+  (let ((pos (- (point) 2)))
+    (let ((char (char-after (- pos 1))))
+      (compose-region (- pos 1) pos (concat "▏" (string char))))))

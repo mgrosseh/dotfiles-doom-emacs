@@ -57,3 +57,5 @@
 (package! evil-visual-mark-mode) ;; display evil marks in buffer
 (package! undo-tree) ;; show undo tree
 (package! rainbow-mode) ;; highlight hex colors
+
+(package! flyover)
