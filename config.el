@@ -209,7 +209,8 @@
   (set-face-foreground 'centaur-tabs-close-selected "#ff5555")
   (defun +tabs-buffer-list ()
     (seq-filter (lambda (b)
-                  (if (cond ((string-match "[*]Treemacs.*" (buffer-name b)) ;; added filter to filter out certain buffers
+                  (if ;; added filter to filter out certain buffers
+                      (cond ((string-equal " *Treemacs-Buffer-Perspective main" (buffer-name b))
                              (string-equal "*doom*" (buffer-name b))))
                       nil
                     (cond ((eq (current-buffer) b) b)
